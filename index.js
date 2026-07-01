@@ -29,6 +29,8 @@ app.command("/slackify-help", async ({ack, respond}) => {
 /slackify-catfact - Fetches a Cat Fact
 /slackify-joke - Fetches a random joke
 /slackify-tip - Fetches a random tip from HCAI
+/slackify-quote - Fetches a random Quote
+/slackify-meme - Fetches a random meme (less funny than your life)
         `
     });
 });
@@ -97,7 +99,39 @@ app.command("/slackify-tip", async ({ack, respond}) => {
     }
 });
 
+app.command("/slackify-quote", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://dummyjson.com/quotes/random");
+        const {quote, author} = response.data;
+
+        await respond({
+            text: `"${quote}"\n - *${author}*`
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch quote :( Stay motivated gng :)"
+        });
+    }
+});
+
+app.command("/slackify-meme", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://meme-api.com/gimme");
+        const {title, url, subreddit} = response.data;
+
+        await respond({
+            text: `*${title}* (from r/${subreddit})\n${url}`
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch a meme :( your life is a live meme :)"
+        });
+    }
+});
+
 (async () => {
     await app.start();
-    console.log("bot is running!");
+    console.log("bot is not walking, it is running :)");
 })();
