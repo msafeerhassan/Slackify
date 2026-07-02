@@ -1,7 +1,8 @@
 require("dotenv").config();
 
 const { App } = require("@slack/bolt")
-const axios = require("axios")
+const axios = require("axios");
+// const { use } = require("react");
 const AI_BASE_URL = "https://ai.hackclub.com/proxy/v1"
 
 const app = new App({
@@ -40,6 +41,8 @@ app.command("/slackify-help", async ({ack, respond}) => {
 /slackify-affirm - fetches a random affirmation
 /slackify-toss - fetches either yes or no + an image
 /slackify-weather - Fetches live weather of specific city. Usage: /slackify-weather Cityname
+/slackify-github - Fetches github Stats of a specific Github User. Usage: /slackify-github username
+/slackify-excuse - Fetches an excuse based on your given category(giving category is optional)
 `
     });
 });
@@ -348,6 +351,73 @@ app.command("/slackify-weather", async ({ack, command, respond}) => {
             text: "Failed to load weather conditons - no joke this time :("      
         });
     }
+});
+
+app.command("/slackify-github", async ({ack, command, respond}) => {
+    await ack();
+
+    const username = command.text ? command.text.trim() : "";
+
+    if(!username) {
+        await respond({
+            text: "Please provide a GitHub username. For example: `/slackify-github orpheus`"
+        });
+
+        return;
+    }
+
+    try {
+        const response = await axios.get(`https://api.github.com/users/${encodeURIComponent(username)}`, {
+            headers: {
+                "User-Agent": "Slackify-Bot"
+            }
+        });
+
+        const { login, name, public_repos, followers, html_url } = response.data;
+        const displayName = name ? `${name} (@${login})` : `@${login}`;
+
+        await respond({
+            text: `Github Profile for ${displayName}:\n Public Repositories: ${public_repos}\n Followers: ${followers}\n Profile Link: ${html_url}`
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            await respond({
+                text: `Could not find Github Profile with username: ${username}`
+            });
+        }
+        else {
+            await respond({
+                text: "Failed to fetch Github Profile Data. Octocat is taking a nap, come back later :)"
+            });
+        }
+    }
+});
+
+app.command("/slackify-excuse", async ({ack, command, respond}) => {
+    await ack();
+
+    const category = command.text ? command.text.trim() : "";
+    const validCategories = ["office", "family", "children", "college", "party", "funny"];
+
+    let url = "https://excuser-three.vercel.app/v1/excuse/";
+
+    if (category && validCategories.includes(category)) {
+        url = `https://excuser-three.vercel.app/v1/excuse/${category}`;
+    }
+
+    try {
+        const response = await axios.get(url);
+        const excuse = response.data[0];
+
+        await respond({
+            text: `Excuse (${excuse.category}):\n ${excuse.excuse}`
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch an excuse - guess you'll have to tell truth this time :)"
+        });
+    }
+
 });
 
 (async () => {
