@@ -313,35 +313,35 @@ app.command("/slackify-weather", async ({ack, command, respond}) => {
 
         const {latitude, longitude, name, country} = geoResp.data.results[0];
 
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m,weather_code`;
 
         const weatherResp = await axios.get(weatherUrl);
 
-        const {temp, windspeed, weathercode} = weatherResp.data.current_weather;
+        const {temperature_2m, wind_speed_10m, weather_code} = weatherResp.data.current;
 
         let condition = "Clear";
 
-        if (weathercode === 0) {
+        if (weather_code === 0) {
             condition = "Clear Sky!";
         }
-        else if ([1, 2, 3].includes(weathercode)) {
+        else if ([1, 2, 3].includes(weather_code)) {
             condition = "Partly Cloudy!";
         }
-        else if([45, 48].includes(weathercode)) {
+        else if([45, 48].includes(weather_code)) {
             condition = "Foggy!";
         }
-        else if ([51, 53, 55,61,63,65].includes(weathercode)) {
+        else if ([51, 53, 55,61,63,65].includes(weather_code)) {
             condition = "Rainy!";
         }
-        else if ([71, 73, 75, 77, 85, 86].includes(weathercode)) {
+        else if ([71, 73, 75, 77, 85, 86].includes(weather_code)) {
             condition = "Snowy!";
         }
-        else if ([95, 96, 99].includes(weathercode)) {
+        else if ([95, 96, 99].includes(weather_code)) {
             condition = "Thunderstorm!";
         }
 
         await respond({
-            text: `Current Weather for ${name}, ${country}:\n Conditions: ${condition}\n Temperature: ${temp}\n Wind Speed: ${windspeed} km/h`
+            text: `Current Weather for ${name}, ${country}:\n Conditions: ${condition}\n Temperature: ${temperature_2m}°C\n Wind Speed: ${wind_speed_10m} km/h`
         });
     } catch (error) {
         respond({
