@@ -27,11 +27,15 @@ app.command("/slackify-help", async ({ack, respond}) => {
 /slackify-ping - Checks bot latency
 /slackify-help - For help regardings bot's commands
 /slackify-catfact - Fetches a Cat Fact
+/slackify-dogfact - Fetches a random dog fact
 /slackify-joke - Fetches a random joke
 /slackify-tip - Fetches a random tip from HCAI
 /slackify-quote - Fetches a random Quote
 /slackify-meme - Fetches a random meme (less funny than your life)
-        `
+/slackify-advice - Fetches a random piece of Advice
+/slackify-dogpic - Fetches a random dog picture
+/slackify-foxpic - fetches a random fox pic
+`
     });
 });
 
@@ -127,6 +131,69 @@ app.command("/slackify-meme", async ({ack, respond}) => {
     } catch (error) {
         await respond({
             text: "Failed to fetch a meme :( your life is a live meme :)"
+        });
+    }
+});
+
+app.command("/slackify-advice", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://api.adviceslip.com/advice")
+        const { advice } = response.data.slip;
+        await respond ({
+            text: advice
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch advice :( stay strong :)"
+        });
+    }
+});
+
+app.command("/slackify-dogfact", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://dogapi.dog/api/v2/facts");
+        const dogFact = response.data.data[0].attributes.body;
+
+        await respond({
+            text: dogFact
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch dog fact :( meow meow"
+        });
+    }
+});
+
+app.command("/slackify-dogpic", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://dog.ceo/api/breeds/image/random");
+        const url = response.data.message;
+
+        await respond({
+            text: `Here's dog image: ${url}`
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch a dog image :( this too shall pass"
+        });
+    }
+});
+
+app.command("/slackify-foxpic", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://randomfox.ca/floof/");
+        const imgUrl = response.data.image;
+
+        await respond({
+            text: `A fox image (clever like you): ${imgUrl}`
+        });
+    } catch (error) {
+        await respond({
+            text: "Cant fetch fox image - see a live example in mirror :)"
         });
     }
 });
