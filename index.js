@@ -35,6 +35,10 @@ app.command("/slackify-help", async ({ack, respond}) => {
 /slackify-advice - Fetches a random piece of Advice
 /slackify-dogpic - Fetches a random dog picture
 /slackify-foxpic - fetches a random fox pic
+/slackify-bored - Fetches a random activity suggestion when you are bored
+/slackify-numtrivia - Fetches a Number Trivia
+/slackify-affirm - fetches a random affirmation
+/slackify-toss - fetches either yes or no + an image
 `
     });
 });
@@ -194,6 +198,91 @@ app.command("/slackify-foxpic", async ({ack, respond}) => {
     } catch (error) {
         await respond({
             text: "Cant fetch fox image - see a live example in mirror :)"
+        });
+    }
+});
+
+app.command("/slackify-bored", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://bored-api.appbrewery.com/random");
+        const data = response.data.activity;
+
+        await respond({
+            text: `Bored? Try this: ${data}`
+        });
+    } catch (error) {
+        await respond({
+            text: "your boredom bored me also - failed to fetch any activity suggestion :("
+        });
+    }
+});
+
+app.command("/slackify-numtrivia", async ({ack, respond}) => {
+    await ack();
+
+    try {
+        const response = await axios.post(
+            `${AI_BASE_URL}/chat/completions`,
+            {
+                model: "qwen/qwen3-32b",
+                messages: [
+                    {
+                        role: "user",
+                        content: "Give me a single random, weird, or interesting trivia fact about any random number. Keep it brief, just text, no markdown formatting."
+                    }
+                ],
+                stream: false,
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${process.env.AI_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+            }
+        );
+
+        const trivia = response.data.choices[0].message.content;
+
+        await respond({
+            text: `Number TriviaL ${trivia}`
+        });
+    } catch (error) {
+        await respond({
+            text: "failed to fetch number trivia :( even math is scared of you - aura ++"
+        });
+    }
+});
+
+app.command("/slackify-affirm", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://www.affirmations.dev/");
+        const data = response.data.affirmation;
+
+        await respond({
+            text: `Affirmation: ${data}`
+        });
+    } catch (error) {
+        await respond({
+            text: "Can't fetch an affirmation - universe is out of compliments today :("
+        });
+    }
+});
+
+app.command("/slackify-toss", async ({ack, respond}) => {
+    await ack();
+
+    try {
+        const response = await axios.get("https://yesno.wtf/api");
+        const {answer, image} = response.data;
+
+        await respond({
+            text: `Answer: ${answer.toUpperCase()}\n${image}`
+        });
+    } catch (error) {
+        await respond({
+            text: "Toss failed :( go get a coin and toss"
         });
     }
 });
