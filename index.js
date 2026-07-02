@@ -39,6 +39,7 @@ app.command("/slackify-help", async ({ack, respond}) => {
 /slackify-numtrivia - Fetches a Number Trivia
 /slackify-affirm - fetches a random affirmation
 /slackify-toss - fetches either yes or no + an image
+/slackify-weather - Fetches live weather of specific city. Usage: /slackify-weather Cityname
 `
     });
 });
@@ -283,6 +284,68 @@ app.command("/slackify-toss", async ({ack, respond}) => {
     } catch (error) {
         await respond({
             text: "Toss failed :( go get a coin and toss"
+        });
+    }
+});
+
+app.command("/slackify-weather", async ({ack, command, respond}) => {
+    await ack();
+
+    const city = command.text ? command.text.trim() : "";
+
+    if (!city) {
+        await respond({
+            text: "Please provide a city name like `/slackify-weather Lahore`"
+        });
+        return;
+    }
+
+    try {
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`;
+        const geoResp = await axios.get(geoUrl);
+
+        if (!geoResp.data.results || geoResp.data.results.length === 0) {
+            await respond({
+                text: `Could not find weather results for ${city}. Please recheck city name`
+            });
+            return;
+        }
+
+        const {latitude, longitude, name, country} = geoResp.data.results[0];
+
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+
+        const weatherResp = await axios.get(weatherUrl);
+
+        const {temp, windspeed, weathercode} = weatherResp.data.current_weather;
+
+        let condition = "Clear";
+
+        if (weathercode === 0) {
+            condition = "Clear Sky!";
+        }
+        else if ([1, 2, 3].includes(weathercode)) {
+            condition = "Partly Cloudy!";
+        }
+        else if([45, 48].includes(weathercode)) {
+            condition = "Foggy!";
+        }
+        else if ([51, 53, 55,61,63,65].includes(weathercode)) {
+            condition = "Rainy!";
+        }
+        else if ([71, 73, 75, 77, 85, 86].includes(weathercode)) {
+            condition = "Snowy!";
+        }
+        else if ([95, 96, 99].includes(weathercode)) {
+            condition = "Thunderstorm!";
+        }
+
+        await respond({
+            text: `Current Weather for ${name}, ${country}:\n Conditions: ${condition}\n Temperature: ${temp}\n Wind Speed: ${windspeed} km/h`
+        });
+    } catch (error) {
+        respond({
+            text: "Failed to load weather conditons - no joke this time :("      
         });
     }
 });
