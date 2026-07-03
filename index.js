@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const { App } = require("@slack/bolt")
 const axios = require("axios");
-// const { use } = require("react");
 const AI_BASE_URL = "https://ai.hackclub.com/proxy/v1"
 
 const app = new App({
@@ -24,7 +23,7 @@ app.command("/slackify-help", async ({ack, respond}) => {
     await ack();
     await respond({
         text: `
-        Available Commands:
+Available Commands:
 /slackify-ping - Checks bot latency
 /slackify-help - For help regardings bot's commands
 /slackify-catfact - Fetches a Cat Fact
@@ -38,11 +37,16 @@ app.command("/slackify-help", async ({ack, respond}) => {
 /slackify-foxpic - fetches a random fox pic
 /slackify-bored - Fetches a random activity suggestion when you are bored
 /slackify-numtrivia - Fetches a Number Trivia
-/slackify-affirm - fetches a random affirmation
-/slackify-toss - fetches either yes or no + an image
+/slackify-affirm - Fetches a random affirmation
+/slackify-toss - Fetches either yes or no + an image
 /slackify-weather - Fetches live weather of specific city. Usage: /slackify-weather Cityname
 /slackify-github - Fetches github Stats of a specific Github User. Usage: /slackify-github username
 /slackify-excuse - Fetches an excuse based on your given category(giving category is optional)
+/slackify-define - Fetches definition of specific given word. Usage: /slackify-define indeed
+/slackify-color - Generates a random hex string
+/slackify-ask - Uses HCAI to answer your specific answer. Usage: /slackify-ask Why is sky blue?
+/slackify-roast - Uses HCAI to roast anything. Usage: /slackify-roast topic. Giving topic is optional.
+/slackify-summarize - Uses HCAI to summarize given text. Usage: /slackify-summarize [text].
 `
     });
 });
@@ -418,6 +422,204 @@ app.command("/slackify-excuse", async ({ack, command, respond}) => {
         });
     }
 
+});
+
+app.command("/slackify-define", async ({ack, command, respond}) => {
+    await ack();
+
+    const word = command.text ? command.text.trim() : "";
+
+    if(!word) {
+        await respond({
+            text: "Please provide a word to define. Example: /slackify-define dynamic"
+        });
+        return;
+    }
+
+    try {
+        const response = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+
+        const firstEntry = response.data[0];
+        const partOfSpeech = firstEntry.meanings[0].partOfSpeech;
+        const definition = firstEntry.meanings[0].definitions[0].definition;
+
+        await respond({
+            text: `Definition for ${firstEntry.word}:\n_${partOfSpeech}_\n -> ${definition}`
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            await respond({
+                text: "Can't find definition for this word. Please check you spellings."
+            });
+        }
+        else {
+            await respond({
+                text: "Failed to fetch the definition - go ask your english teacher :)"
+            });
+        }
+    }
+});
+
+app.command("/slackify-color", async ({ack, respond}) => {
+    await ack();
+
+    try {
+        const randomHex = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        const url = `https://singlecolorimage.com/get/${randomHex}/200x200`;
+
+        await respond({
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `Random Color Variant: \`#${randomHex.toUpperCase()}\``
+                    }
+                },
+                {
+                    type: 'image',
+                    image_url: url,
+                    alt_text: `Color Swatch for #${randomHex}`
+                }
+            ]
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to generate random hex string. Use #ffffff and #000000 right now :)"
+        });
+    }
+});
+
+app.command("/slackify-ask", async ({ack, command, respond}) => {
+    await ack();
+
+    const question = command.text ? command.text.trim() : "";
+
+    if(!question) {
+        await respond({
+            text: "Please provide a question. Example: `/slackify-ask How many r's are there in strawberry?`"
+        });
+        return;
+    }
+
+    try {
+        const response = await axios.post(
+            `${AI_BASE_URL}/chat/completions`,
+            {
+                model: "qwen/qwen3-32b",
+                messages: [
+                    {
+                        role: "user",
+                        content: question
+                    }
+                ],
+                stream: false,
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${process.env.AI_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+            }
+        );
+
+        const aiResponse = response.data.choices[0].message.content;
+
+        await respond({
+            text: `*AI Assistant:* ${aiResponse}`
+        });
+    } catch (error) {
+        await respond({
+            text: `Error fetching response from HCAI :(: ${error} | use your own brain bro :)`
+        });
+    }
+});
+
+app.command("/slackify-roast", async ({ack, command, respond}) => {
+    await ack();
+
+    let topic = command.text ? command.text.trim() : "";
+
+    if(!topic) {
+        topic = "anything"
+    }
+
+    try {
+        const response = await axios.post(
+            `${AI_BASE_URL}/chat/completions/`,
+            {
+                model: "qwen/qwen3-32b",
+                messages: [
+                    {
+                        role: "user",
+                        content: `Roast ${topic} in most brutal and savage way possible - be short and direct but savage`
+                    }
+                ],
+                stream: false,
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${process.env.AI_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+            },
+        )
+
+        const aiResp = response.data.choices[0].message.content;
+
+        await respond({
+            text: `RoastAI: ${aiResp}`
+        })
+    } catch (error) {
+        await respond({
+            text: `Error fetching response from HCAI: ${error} | watch insta reels comments to get idea of how to roast`
+        });
+    }
+});
+
+app.command("/slackify-summarize", async ({ack, command, respond}) => {
+    await ack();
+
+    const text = command.text ? command.text.trim() : "";
+
+    if(!text) {
+        await respond({
+            text: "Please enter the text to summarize. Example: /slackify-summarize [text to summarize]"
+        });
+        return ;
+    }
+
+    try {
+        const response = await axios.post(
+            `${AI_BASE_URL}/chat/completion/`,
+            {
+                model: "qwen/qwen3-32b",
+                messages: [
+                    {
+                        role: "user",
+                        message: `Summarize the following text: '${text}'. Return summary of no more than 100 words - try to be as short and concise as possible.`
+                    }
+                ],
+                stream: false,
+            },
+            {
+                headers:{
+                    "Authorization": `Bearer ${process.env.AI_API_KEY}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const aiRes = response.data.choices[0].message.content;
+
+        await respond({
+            text: `AI Summary:\n${aiRes}`
+        });
+    } catch (error) {
+        await respond({
+            text: `Failed fetching response from HCAI: ${error} | read whole article/chat bruh :)`
+        });
+    }
 });
 
 (async () => {
