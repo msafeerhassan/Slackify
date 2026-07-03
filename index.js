@@ -47,6 +47,10 @@ Available Commands:
 /slackify-ask - Uses HCAI to answer your specific answer. Usage: /slackify-ask Why is sky blue?
 /slackify-roast - Uses HCAI to roast anything. Usage: /slackify-roast topic. Giving topic is optional.
 /slackify-summarize - Uses HCAI to summarize given text. Usage: /slackify-summarize [text].
+/slackify-8ball - Gives random certainity comment (positive, negative or uncertain). Usage: /slackify-8ball Would I win raffle this time?
+/slackify-hug - Sends a hug message + gif tagging specific user in channel. Usage: /slackify-hug Name
+/slackify-highfive - Sends a high-five message + gif tagging specific user in channel. Usage: /slackify-highfive Name 
+/slackify-trivia - Asks a trivia question.
 `
     });
 });
@@ -618,6 +622,105 @@ app.command("/slackify-summarize", async ({ack, command, respond}) => {
     } catch (error) {
         await respond({
             text: `Failed fetching response from HCAI: ${error} | read whole article/chat bruh :)`
+        });
+    }
+});
+
+app.command("/slackify-8ball", async ({ack, command, respond}) => {
+    await ack();
+    const question = command.text ? command.text.trim() : "";
+
+    if (!question){
+        await respond({
+            text: "Ask Magic 8-ball a question. Example: `/slackify-8ball Will I win HCB July Raffle?`"
+        });
+        
+        return;
+    }
+
+    const responses = [
+        "It is certain 🟢",
+        "It is decidedly so 🟢",
+        "No doubt 🟢",
+        "Definitely 🟢",
+        "As I see it, yes 🟢",
+        "Try again :( 🟡",
+        "Ask Again Later 🟡",
+        "Would be better if you asked later 🟡",
+        "Cannot Predict now 🟡",
+        "Concentrate and ask again 🟡",
+        "NOOOOOOO 🔴",
+        "Doesn't sounds good 🔴",
+        "Very doubtful 🔴",
+        "Heavy Risk 🔴",
+        "Dispossible 🔴😂"
+    ];
+
+    const randomAns = responses[Math.floor(Math.random() * responses.length)];
+
+    await respond({
+        text: `Magic 8-Ball\n-> Question: ${question}\n-> Answer: ${randomAns}`
+    });
+});
+
+app.command("/slackify-hug", async ({ack, command, respond}) => {
+    await ack();
+    const target = command.text ? command.text.trim() : "someone";
+
+    const gifs = [
+        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/od5H3PmEG5EVq/giphy.gif",
+        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/2XOL4zsm6V0BBxmEAH/giphy.gif"
+    ];
+
+    const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+
+    await respond({
+        response_type: "in_channel",
+        text: `${command.user_name} gives a big hug to ${target}!\n${randomGif}`
+    });
+});
+
+app.command("/slackify-highfive", async ({ack, command, respond}) => {
+    await ack();
+    const target = command.text ? command.text.trim() : "the channel";
+
+    const gifs = [
+        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/3oEJHV0z8S7WM4MwnK/giphy.gif",
+        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/2XOL4zsm6V0BBxmEAH/giphy.gif",
+    ];
+
+    const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+
+    await respond({
+        response_type: "in_channel",
+        text: `${command.user_name} high-fives ${target}!\n${randomGif}`
+    });
+});
+
+app.command("/slackify-trivia", async ({ack, respond}) => {
+    await ack();
+    try {
+        const response = await axios.get("https://opentdb.com/api.php?amount=1");
+
+        if(!response.data.results || response.data.results.length === 0) {
+            await respond({
+                text: "API returned nothing - what a bad luck :("
+            });
+            return;
+        }
+
+        const item = response.data.results[0];
+
+        const cleanQs = item.question.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&').replace(/&eacute;/g, 'é');
+    
+        const choices = [...item.incorrect_answers, item.correct_answers].map(c => c.replace(/quot;/g, '"').replace(/&#039;/g, "'")).sort(()=> Math.random() - 0.5);
+
+        await respond({
+            text: `Trivia (${item.category}) - (${item.difficulty})\n\nQuestion -> ${cleanQs}\n\nOptions:\n${choices.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n_(Reveal Answer: ||${item.correct_answer.replace(/&quot;/g, '"').replace(/&#039;/g, "'")}||)_`
+        });
+    } catch (error) {
+        await respond({
+            text: "Failed to fetch trivia question - all i can say is 'YOU ARE LIKE EINSTEIN BECAUSE HE WAS ALSO HUMAN :)'"
         });
     }
 });
