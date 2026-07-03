@@ -510,7 +510,7 @@ app.command("/slackify-ask", async ({ack, command, respond}) => {
                 messages: [
                     {
                         role: "user",
-                        content: question
+                        content: `Answer the following question: ${question}. Be as short, direct and concise as possible. Return response without special formatting like *, / etc.`
                     }
                 ],
                 stream: false,
@@ -546,7 +546,7 @@ app.command("/slackify-roast", async ({ack, command, respond}) => {
 
     try {
         const response = await axios.post(
-            `${AI_BASE_URL}/chat/completions/`,
+            `${AI_BASE_URL}/chat/completions`,
             {
                 model: "qwen/qwen3-32b",
                 messages: [
@@ -591,7 +591,7 @@ app.command("/slackify-summarize", async ({ack, command, respond}) => {
 
     try {
         const response = await axios.post(
-            `${AI_BASE_URL}/chat/completion/`,
+            `${AI_BASE_URL}/chat/completions`,
             {
                 model: "qwen/qwen3-32b",
                 messages: [
