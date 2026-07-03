@@ -10,51 +10,6 @@ const app = new App({
     socketMode: true
 });
 
-app.command("/slackify-ping", async ({command, ack, respond}) => {
-    const start = Date.now();
-    await ack();
-    const latency = Date.now() - start;
-    await respond({
-        text: `Ping Pong!\nLatency: ${latency}ms`
-    });
-});
-
-app.command("/slackify-help", async ({ack, respond}) => {
-    await ack();
-    await respond({
-        text: `
-Available Commands:
-/slackify-ping - Checks bot latency
-/slackify-help - For help regardings bot's commands
-/slackify-catfact - Fetches a Cat Fact
-/slackify-dogfact - Fetches a random dog fact
-/slackify-joke - Fetches a random joke
-/slackify-tip - Fetches a random tip from HCAI
-/slackify-quote - Fetches a random Quote
-/slackify-meme - Fetches a random meme (less funny than your life)
-/slackify-advice - Fetches a random piece of Advice
-/slackify-dogpic - Fetches a random dog picture
-/slackify-foxpic - fetches a random fox pic
-/slackify-bored - Fetches a random activity suggestion when you are bored
-/slackify-numtrivia - Fetches a Number Trivia
-/slackify-affirm - Fetches a random affirmation
-/slackify-toss - Fetches either yes or no + an image
-/slackify-weather - Fetches live weather of specific city. Usage: /slackify-weather Cityname
-/slackify-github - Fetches github Stats of a specific Github User. Usage: /slackify-github username
-/slackify-excuse - Fetches an excuse based on your given category(giving category is optional)
-/slackify-define - Fetches definition of specific given word. Usage: /slackify-define indeed
-/slackify-color - Generates a random hex string
-/slackify-ask - Uses HCAI to answer your specific answer. Usage: /slackify-ask Why is sky blue?
-/slackify-roast - Uses HCAI to roast anything. Usage: /slackify-roast topic. Giving topic is optional.
-/slackify-summarize - Uses HCAI to summarize given text. Usage: /slackify-summarize [text].
-/slackify-8ball - Gives random certainity comment (positive, negative or uncertain). Usage: /slackify-8ball Would I win raffle this time?
-/slackify-hug - Sends a hug message + gif tagging specific user in channel. Usage: /slackify-hug Name
-/slackify-highfive - Sends a high-five message + gif tagging specific user in channel. Usage: /slackify-highfive Name 
-/slackify-trivia - Asks a trivia question.
-`
-    });
-});
-
 app.command("/slackify-catfact", async ({ack, respond}) => {
     await ack();
 
