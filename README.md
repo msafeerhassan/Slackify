@@ -12,12 +12,12 @@
 5. Commands available for every type of mood :)
 
 #### How to test it?
-1. Go over to any channel in Hack Club Slack Workspace - preferably a private or personal channel.
+1. Go over to any channel in Hack Club Slack Workspace - preferably a private or personal channel - we have a dedicated channel named `#slackify-bot` for testing.
 2. Simply test the commands :)
 
 #### How to use it locally?
 1. Clone this repository.
-2. Install the requirements.
+2. Install the required packages including node.
 3. Add your own API Keys and credentials in .env file.
 4. Run `node index.js`
 

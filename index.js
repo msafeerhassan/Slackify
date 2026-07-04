@@ -10,12 +10,29 @@ const app = new App({
     socketMode: true
 });
 
+app.use(async ({command, client, next}) => {
+    if (command && command.command) {
+        try {
+            const argText = command.text ? ` ${command.text}` : "";
+            await client.chat.postMessage({
+                channel: command.channel_id,
+                text: `<@${command.user_id}> ran \`${command.command}\`${argText}`
+            });
+        } catch (error) {
+            console.error("Failed to post command announcement:", error)
+        }
+    }
+
+    await next();
+})
+
 app.command("/slackify-catfact", async ({ack, respond}) => {
     await ack();
 
     try {
         const response = await axios.get("https://catfact.ninja/fact");
         await respond({
+            response_type: "in_channel",
             text: `Cat Fact:\n${response.data.fact}`
         });
     }
@@ -31,10 +48,8 @@ app.command("/slackify-joke", async ({ack, respond}) => {
     try {
         const response = await axios.get("https://official-joke-api.appspot.com/random_joke");
         await respond({
-            text:
-`${response.data.setup}
-
-${response.data.punchline}`
+            response_type: "in_channel",
+            text: `${response.data.setup}\n\n${response.data.punchline}`
         });
     } catch (err) {
         await respond({
@@ -67,10 +82,13 @@ app.command("/slackify-tip", async ({ack, respond}) => {
         );
 
         await respond({
+            response_type: "in_channel",
             text: response.data.choices[0].message.content
         });
     } catch (error) {
-        await respond(`Error Fetching Tip from HCAI: ${error}`);
+        await respond({
+            text: `Error Fetching Tip from HCAI: ${error}`
+    });
     }
 });
 
@@ -81,6 +99,7 @@ app.command("/slackify-quote", async ({ack, respond}) => {
         const {quote, author} = response.data;
 
         await respond({
+            response_type: "in_channel",
             text: `"${quote}"\n - *${author}*`
         });
     } catch (error) {
@@ -97,6 +116,7 @@ app.command("/slackify-meme", async ({ack, respond}) => {
         const {title, url, subreddit} = response.data;
 
         await respond({
+            response_type: "in_channel",
             text: `*${title}* (from r/${subreddit})\n${url}`
         });
     } catch (error) {
@@ -112,6 +132,7 @@ app.command("/slackify-advice", async ({ack, respond}) => {
         const response = await axios.get("https://api.adviceslip.com/advice")
         const { advice } = response.data.slip;
         await respond ({
+            response_type: "in_channel",
             text: advice
         });
     } catch (error) {
@@ -128,6 +149,7 @@ app.command("/slackify-dogfact", async ({ack, respond}) => {
         const dogFact = response.data.data[0].attributes.body;
 
         await respond({
+            response_type: "in_channel",
             text: dogFact
         });
     } catch (error) {
@@ -144,6 +166,7 @@ app.command("/slackify-dogpic", async ({ack, respond}) => {
         const url = response.data.message;
 
         await respond({
+            response_type: "in_channel",
             text: `Here's dog image: ${url}`
         });
     } catch (error) {
@@ -160,6 +183,7 @@ app.command("/slackify-foxpic", async ({ack, respond}) => {
         const imgUrl = response.data.image;
 
         await respond({
+            response_type: "in_channel",
             text: `A fox image (clever like you): ${imgUrl}`
         });
     } catch (error) {
@@ -176,6 +200,7 @@ app.command("/slackify-bored", async ({ack, respond}) => {
         const data = response.data.activity;
 
         await respond({
+            response_type: "in_channel",
             text: `Bored? Try this: ${data}`
         });
     } catch (error) {
@@ -212,6 +237,7 @@ app.command("/slackify-numtrivia", async ({ack, respond}) => {
         const trivia = response.data.choices[0].message.content;
 
         await respond({
+            response_type: "in_channel",
             text: `Number TriviaL ${trivia}`
         });
     } catch (error) {
@@ -228,6 +254,7 @@ app.command("/slackify-affirm", async ({ack, respond}) => {
         const data = response.data.affirmation;
 
         await respond({
+            response_type: "in_channel",
             text: `Affirmation: ${data}`
         });
     } catch (error) {
@@ -245,6 +272,7 @@ app.command("/slackify-toss", async ({ack, respond}) => {
         const {answer, image} = response.data;
 
         await respond({
+            response_type: "in_channel",
             text: `Answer: ${answer.toUpperCase()}\n${image}`
         });
     } catch (error) {
@@ -307,10 +335,11 @@ app.command("/slackify-weather", async ({ack, command, respond}) => {
         }
 
         await respond({
+            response_type: "in_channel",
             text: `Current Weather for ${name}, ${country}:\n Conditions: ${condition}\n Temperature: ${temperature_2m}°C\n Wind Speed: ${wind_speed_10m} km/h`
         });
     } catch (error) {
-        respond({
+        await respond({
             text: "Failed to load weather conditons - no joke this time :("      
         });
     }
@@ -340,6 +369,7 @@ app.command("/slackify-github", async ({ack, command, respond}) => {
         const displayName = name ? `${name} (@${login})` : `@${login}`;
 
         await respond({
+            response_type: "in_channel",
             text: `Github Profile for ${displayName}:\n Public Repositories: ${public_repos}\n Followers: ${followers}\n Profile Link: ${html_url}`
         });
     } catch (error) {
@@ -373,6 +403,7 @@ app.command("/slackify-excuse", async ({ack, command, respond}) => {
         const excuse = response.data[0];
 
         await respond({
+            response_type: "in_channel",
             text: `Excuse (${excuse.category}):\n ${excuse.excuse}`
         });
     } catch (error) {
@@ -403,6 +434,7 @@ app.command("/slackify-define", async ({ack, command, respond}) => {
         const definition = firstEntry.meanings[0].definitions[0].definition;
 
         await respond({
+            response_type: "in_channel",
             text: `Definition for ${firstEntry.word}:\n_${partOfSpeech}_\n -> ${definition}`
         });
     } catch (error) {
@@ -427,6 +459,7 @@ app.command("/slackify-color", async ({ack, respond}) => {
         const url = `https://singlecolorimage.com/get/${randomHex}/200x200`;
 
         await respond({
+            response_type: "in_channel",
             blocks: [
                 {
                     type: "section",
@@ -485,6 +518,7 @@ app.command("/slackify-ask", async ({ack, command, respond}) => {
         const aiResponse = response.data.choices[0].message.content;
 
         await respond({
+            response_type: "in_channel",
             text: `*AI Assistant:* ${aiResponse}`
         });
     } catch (error) {
@@ -527,6 +561,7 @@ app.command("/slackify-roast", async ({ack, command, respond}) => {
         const aiResp = response.data.choices[0].message.content;
 
         await respond({
+            response_type: "in_channel",
             text: `RoastAI: ${aiResp}`
         })
     } catch (error) {
@@ -556,7 +591,7 @@ app.command("/slackify-summarize", async ({ack, command, respond}) => {
                 messages: [
                     {
                         role: "user",
-                        message: `Summarize the following text: '${text}'. Return summary of no more than 100 words - try to be as short and concise as possible.`
+                        content: `Summarize the following text: '${text}'. Return summary of no more than 100 words - try to be as short and concise as possible.`
                     }
                 ],
                 stream: false,
@@ -572,6 +607,7 @@ app.command("/slackify-summarize", async ({ack, command, respond}) => {
         const aiRes = response.data.choices[0].message.content;
 
         await respond({
+            response_type: "in_channel",
             text: `AI Summary:\n${aiRes}`
         });
     } catch (error) {
@@ -614,6 +650,7 @@ app.command("/slackify-8ball", async ({ack, command, respond}) => {
     const randomAns = responses[Math.floor(Math.random() * responses.length)];
 
     await respond({
+        response_type: "in_channel",
         text: `Magic 8-Ball\n-> Question: ${question}\n-> Answer: ${randomAns}`
     });
 });
@@ -622,16 +659,11 @@ app.command("/slackify-hug", async ({ack, command, respond}) => {
     await ack();
     const target = command.text ? command.text.trim() : "someone";
 
-    const gifs = [
-        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/od5H3PmEG5EVq/giphy.gif",
-        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/2XOL4zsm6V0BBxmEAH/giphy.gif"
-    ];
-
-    const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+    const gif = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/od5H3PmEG5EVq/giphy.gif";
 
     await respond({
         response_type: "in_channel",
-        text: `${command.user_name} gives a big hug to ${target}!\n${randomGif}`
+        text: `${command.user_name} gives a big hug to ${target}!\n${gif}`
     });
 });
 
@@ -639,16 +671,11 @@ app.command("/slackify-highfive", async ({ack, command, respond}) => {
     await ack();
     const target = command.text ? command.text.trim() : "the channel";
 
-    const gifs = [
-        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/3oEJHV0z8S7WM4MwnK/giphy.gif",
-        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/2XOL4zsm6V0BBxmEAH/giphy.gif",
-    ];
-
-    const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+    const gif = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3BndjN4d2pqOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2pxOHVwOHd4MnR4d2px/3oEJHV0z8S7WM4MwnK/giphy.gif";
 
     await respond({
         response_type: "in_channel",
-        text: `${command.user_name} high-fives ${target}!\n${randomGif}`
+        text: `${command.user_name} high-fives ${target}!\n${gif}`
     });
 });
 
@@ -668,9 +695,10 @@ app.command("/slackify-trivia", async ({ack, respond}) => {
 
         const cleanQs = item.question.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&').replace(/&eacute;/g, 'é');
     
-        const choices = [...item.incorrect_answers, item.correct_answers].map(c => c.replace(/quot;/g, '"').replace(/&#039;/g, "'")).sort(()=> Math.random() - 0.5);
-
+        const choices = [...item.incorrect_answers, item.correct_answer].map(c => c.replace(/&quot;/g, '"').replace(/&#039;/g, "'")).sort(()=> Math.random() - 0.5);
+        
         await respond({
+            response_type: "in_channel",
             text: `Trivia (${item.category}) - (${item.difficulty})\n\nQuestion -> ${cleanQs}\n\nOptions:\n${choices.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n_(Reveal Answer: ||${item.correct_answer.replace(/&quot;/g, '"').replace(/&#039;/g, "'")}||)_`
         });
     } catch (error) {
